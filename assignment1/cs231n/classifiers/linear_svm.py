@@ -33,6 +33,10 @@ def svm_loss_naive(W, X, y, reg):
         continue
       margin = scores[j] - correct_class_score + 1 # note delta = 1
       if margin > 0:
+          # reference this notes to know how to caculate gradient for svm loss
+          # http://cs231n.github.io/optimization-1/
+        dW[:, j] += X[i, :] 
+        dW[:, y[i]] -= X[i, :]
         loss += margin
 
   # Right now the loss is a sum over all training examples, but we want it
@@ -50,8 +54,7 @@ def svm_loss_naive(W, X, y, reg):
   # loss is being computed. As a result you may need to modify some of the    #
   # code above to compute the gradient.                                       #
   #############################################################################
-
-
+  dW = dW / num_train + 2 * reg * W
   return loss, dW
 
 
@@ -69,7 +72,18 @@ def svm_loss_vectorized(W, X, y, reg):
   # Implement a vectorized version of the structured SVM loss, storing the    #
   # result in loss.                                                           #
   #############################################################################
-  pass
+  # get number of training samples
+  num_train = W.shape[0]
+  # caculate the scores of each sample c classs
+  scores = np.dot(X, W)
+  # get the score of the right label of each sample
+  label_scores = scores[np.arange(num_train, y)]
+  # caculate margin
+  margins = np.maximum(0, scores - label_scores[:, None])
+  # cacula the loss 
+  loss = np.mean(np.sum(margins, axis=1))
+  # and the regularizaion term
+  loss += reg * np.sum(W * W)
   #############################################################################
   #                             END OF YOUR CODE                              #
   #############################################################################
