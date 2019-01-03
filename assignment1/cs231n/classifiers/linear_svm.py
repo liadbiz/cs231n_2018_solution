@@ -1,5 +1,4 @@
 import numpy as np
-from random import shuffle
 
 def svm_loss_naive(W, X, y, reg):
   """
@@ -73,13 +72,14 @@ def svm_loss_vectorized(W, X, y, reg):
   # result in loss.                                                           #
   #############################################################################
   # get number of training samples
-  num_train = W.shape[0]
+  num_train = X.shape[0]
   # caculate the scores of each sample c classs
   scores = np.dot(X, W)
   # get the score of the right label of each sample
-  label_scores = scores[np.arange(num_train, y)]
+  label_scores = scores[np.arange(num_train), y]
   # caculate margin
-  margins = np.maximum(0, scores - label_scores[:, None])
+  margins = np.maximum(0, scores - label_scores[:, None] + 1)
+  margins[np.arange(num_train), y] = 0
   # cacula the loss 
   loss = np.mean(np.sum(margins, axis=1))
   # and the regularizaion term
@@ -98,7 +98,13 @@ def svm_loss_vectorized(W, X, y, reg):
   # to reuse some of the intermediate values that you used to compute the     #
   # loss.                                                                     #
   #############################################################################
-  pass
+  contribution = margins
+  contribution[margins > 0] = 1
+  contri_row_sum = np.sum(contribution, axis=1)
+  contribution[np.arange(num_train), y] = -contri_row_sum.T
+  dW = np.dot(X.T, contribution)
+  dW /= num_train
+  dW += 2 * reg * W
   #############################################################################
   #                             END OF YOUR CODE                              #
   #############################################################################
