@@ -30,19 +30,36 @@ def softmax_loss_naive(W, X, y, reg):
   # regularization!                                                           #
   #############################################################################
   num_train = X.shape[0] 
+  num_classes = W.shape[1]
   scores = np.dot(X, W)
   for i in range(num_train):
+    # caculate loss with loop
     scores_i = scores[i, :]
     scores_i -= np.max(scores_i)
-    pro = np.exp(scores_i) / np.sum(np.exp(scores_i))
-    loss += -np.log(pro[y[i]])
+    scores_i = np.exp(scores_i) / np.sum(np.exp(scores_i))
+    loss_i = -np.log(scores_i[y[i]])
+    # can also use this way:
+    # loss_i = -scores_i[y[i]] + np.log(np.sum(np.exp(scores_i)))
+    loss += loss_i
+
+    # caculate gradient
+    for j in range(num_classes):
+      score_j = scores_i[j]
+      if j == y[i]:
+        dW[:, j] += (score_j - 1) * X[i]
+      else:
+        dW[:, j] += score_j * X[i]
+
+  # average and add regularization term
+  loss /= num_train 
+  loss += reg * np.sum(W * W)
+  
+  dW /= num_train
+  dW += 2 * reg * W
   #############################################################################
   #                          END OF YOUR CODE                                 #
   #############################################################################
-
-  loss /= num_train
-  loss += reg * np.sum(W * W)
-
+  
   return loss, dW
 
 
@@ -62,7 +79,20 @@ def softmax_loss_vectorized(W, X, y, reg):
   # here, it is easy to run into numeric instability. Don't forget the        #
   # regularization!                                                           #
   #############################################################################
-  pass
+  num_train = X.shape[0]
+  scores = np.dot(X, W)
+  scores -= np.max(scores, axis=1)[:, np.newaxis]
+  scores = np.exp(scores) / np.sum(np.exp(scores), axis=1)[:, np.newaxis]
+  # caculate loss without for loop
+  loss = np.mean(-np.log(scores[range(num_train), y]))
+  loss += reg * np.sum(W * W) # * means elementwise product
+
+  # caculate gradient
+  dScores = scores
+  dScores[range(num_train) , y] -= 1
+  dW = np.dot(X.T, dScores)
+  dW /= num_train
+  dW += 2 * reg * W
   #############################################################################
   #                          END OF YOUR CODE                                 #
   #############################################################################
